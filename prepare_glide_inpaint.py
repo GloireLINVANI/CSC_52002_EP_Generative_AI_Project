@@ -4,11 +4,11 @@ from glide_text2im.model_creation import (
     model_and_diffusion_defaults,
     model_and_diffusion_defaults_upsampler
 )
-def create_glide_generative(device, use_inpaint=True, cuda=False):
+def create_glide_generative(device, use_inpaint=True, cuda=False, timesteps='250'):
     options = model_and_diffusion_defaults()
-    options['inpaint'] = True
+    options['inpaint'] = use_inpaint
     options['use_fp16'] = cuda
-    options['timestep_respacing'] = '250'
+    options['timestep_respacing'] = timesteps
     model, diffusion = create_model_and_diffusion(**options)
 
     if cuda:
@@ -20,11 +20,11 @@ def create_glide_generative(device, use_inpaint=True, cuda=False):
         model.load_state_dict(load_checkpoint('base', device))
     return model, diffusion, options
 
-def create_glide_upsampler(device, use_inpaint=True, cuda=False):
+def create_glide_upsampler(device, use_inpaint=True, cuda=False, timesteps='250'):
     options_up = model_and_diffusion_defaults_upsampler()
-    options_up['inpaint'] = True
+    options_up['inpaint'] = use_inpaint
     options_up['use_fp16'] = cuda
-    options_up['timestep_respacing'] = '250'
+    options_up['timestep_respacing'] = timesteps
 
     model, diffusion = create_model_and_diffusion(**options_up)
     model.eval()

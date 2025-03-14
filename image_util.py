@@ -47,3 +47,38 @@ def process_mask(mask_image, size=256, device='cpu'):
     # Add dimensions for batch and channel, expand to 3 channels to match image
     mask_tensor = mask_tensor.unsqueeze(0).unsqueeze(0)
     return mask_tensor.to(device)
+
+def gen_mask_64x64_sr():
+    mask = np.zeros((64, 64, 3), dtype=np.uint8)
+    mask[::2, ::2, :] = 255
+    # mask[32:64, 32:64, :] = 255
+    return mask
+
+def gen_mask_64x64_vert_stripes():
+    mask = np.zeros((64, 64, 3), dtype=np.uint8)
+    mask[:, ::2, :] = 255
+    return mask
+
+def save_img_np(img, path):
+    img = Image.fromarray(img)
+    img.save(path)
+
+def save_img_th(img, path):
+    img = img.cpu().numpy()
+    img = np.transpose(img, (1, 2, 0))
+    img = img.astype(np.uint8)
+    img = Image.fromarray(img)
+    img.save(path)
+
+def save_image(image, path):
+    image = image.permute(1, 2, 0).cpu().numpy()
+    image = (image + 1) / 2 * 255
+    image = image.clip(0, 255).astype(np.uint8)
+    image = Image.fromarray(image)
+    image.save(path)
+
+def save_batch(batch, path, names):
+    import re
+    sub = re.compile(r'[^a-zA-Z0-9]')
+    for i, image in enumerate(batch):
+        save_image(image, path.format(i, re.sub(sub, '', names[i])))
