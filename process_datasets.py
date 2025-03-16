@@ -17,6 +17,7 @@ size = 64
 large_size = 256
 
 common_transform = transforms.Compose([
+    transforms.Lambda(lambda x: x.convert("RGB")),
     transforms.Resize(large_size),
     transforms.CenterCrop(large_size),
     transforms.Resize((size, size)),
@@ -87,7 +88,7 @@ dataloaders = {name: DataLoader(dataset, batch_size=64, shuffle=True, drop_last=
 
 def main():
     cap = 640
-    guidance_scale = 7.0
+    guidance_scale = 5.0
 
     has_cuda = th.cuda.is_available()
     device = th.device('cpu' if not has_cuda else 'cuda:2')
@@ -113,8 +114,8 @@ def main():
         "t_T": 250,
         "n_sample": 1,
         "jump_length": 10,
-        "jump_n_sample": 5,
-        "start_resampling": 20
+        "jump_n_sample": 6,
+        "start_resampling": 30
     }
 
     jump_params_rp_nip = {
@@ -135,10 +136,10 @@ def main():
             batch_size = dataloader.batch_size
             batch_num = 0
             for source_image_64, prompts in dataloader:
-                save_path_base = f"data/samples/{name}/{mask_name}/base/{batch_num}/"
-                save_path_rp = f"data/samples/{name}/{mask_name}/repaint/{batch_num}/"
-                save_path_rpip = f"data/samples/{name}/{mask_name}/rpip/{batch_num}/"
-                save_path_original = f"data/samples/{name}/{mask_name}/original/{batch_num}/"
+                save_path_base = f"data/samples/{name}/{mask_name}/base/"
+                save_path_rp = f"data/samples/{name}/{mask_name}/repaint/"
+                save_path_rpip = f"data/samples/{name}/{mask_name}/rpip/"
+                save_path_original = f"data/samples/{name}/{mask_name}/original/"
                 os.makedirs(save_path_base, exist_ok=True)
                 os.makedirs(save_path_rp, exist_ok=True)
                 os.makedirs(save_path_rpip, exist_ok=True)
@@ -151,10 +152,10 @@ def main():
                 samples_rpip = base_sampler_rpip.sample(source_image_64, mask, prompts, batch_size, jump_params=jump_params, batch_prompts=True)
                 samples_rpip = samples_rpip[:batch_size]
 
-                save_batch(source_image_64, save_path_original + '{1}_{0}.png', prompts)
-                save_batch(samples_glide, save_path_base + '{1}_{0}.png', prompts)
-                save_batch(samples_repaint, save_path_rp + '{1}_{0}.png', prompts)
-                save_batch(samples_rpip, save_path_rpip + '{1}_{0}.png', prompts)
+                save_batch(source_image_64, save_path_original + f"{batch_num}_" + '{1}_{0}.png', prompts)
+                save_batch(samples_glide, save_path_base + f"{batch_num}_" + '{1}_{0}.png', prompts)
+                save_batch(samples_repaint, save_path_rp + f"{batch_num}_" + '{1}_{0}.png', prompts)
+                save_batch(samples_rpip, save_path_rpip + f"{batch_num}_" + '{1}_{0}.png', prompts)
 
                 batch_num += 1
                 processed += batch_size

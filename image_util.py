@@ -14,9 +14,9 @@ def read_image(path: str, size: int = 256) -> torch.Tensor:
     return torch.from_numpy(img)[None].permute(0, 3, 1, 2).float() / 127.5 - 1
 
 
-def read_mask(path: str, size: int = 256) -> Tuple[torch.Tensor, torch.Tensor]:
+def read_mask(path: str, size: int = 256, resample=Image.BICUBIC) -> Tuple[torch.Tensor, torch.Tensor]:
     pil_img = Image.open(path).convert('RGB')
-    pil_img = pil_img.resize((size, size), resample=Image.BICUBIC)
+    pil_img = pil_img.resize((size, size), resample=resample)
     img = np.array(pil_img)
     return (torch.from_numpy(img)[None].permute(0, 3, 1, 2).float() / 255).int()[:, :1, :, :]
 
