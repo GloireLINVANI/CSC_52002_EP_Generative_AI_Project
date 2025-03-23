@@ -1,4 +1,5 @@
 import torch as th
+import torch._dynamo.config
 from torchvision import datasets, transforms
 from torchvision.datasets import ImageFolder, DatasetFolder
 from torch.utils.data import DataLoader, Dataset
@@ -76,9 +77,9 @@ p365t_classes = datasets['places_365_train'].classes
 p365v_classes = datasets['places_365_val'].classes
 
 masks = {
-    'ex64': read_mask('data/masks/64/ex64.png', size=64),
-    'genhalf': read_mask('data/masks/64/genhalf.png',size=64),
-    'sr64': read_mask('data/masks/64/sr64.png',size=64),
+    # 'ex64': read_mask('data/masks/64/ex64.png', size=64),
+    # 'genhalf': read_mask('data/masks/64/genhalf.png',size=64),
+    # 'sr64': read_mask('data/masks/64/sr64.png',size=64),
     'thick': read_mask('data/masks/64/thick.png',size=64),
     'thin': read_mask('data/masks/64/thin.png',size=64),
     'vs64': read_mask('data/masks/64/vs64.png',size=64),
@@ -87,7 +88,7 @@ masks = {
 dataloaders = {name: DataLoader(dataset, batch_size=64, shuffle=True, drop_last=True) for name, dataset in datasets.items()}
 
 def main():
-    cap = 640
+    cap = 160
     guidance_scale = 5.0
 
     has_cuda = th.cuda.is_available()
@@ -108,6 +109,12 @@ def main():
     base_sampler = RS.CFGSamplerInpaint(model, diffusion, options, guidance_scale, device=device)
     base_sampler_rp = RS.CFGSamplerRepaint(model_nip, diffusion_rp_nip, options_nip, guidance_scale, device=device)
     base_sampler_rpip = RS.CFGSamplerRepaintInpaint(model, diffusion_rp, options, guidance_scale, device=device)
+
+    torch._dynamo.config.cache_size_limit = 128
+    
+    base_sampler.sample = torch.compile(base_sampler.sample, mode="reduce-overhead")
+    base_sampler_rp.sample = torch.compile(base_sampler_rp.sample, mode="reduce-overhead")
+    base_sampler_rpip.sample = torch.compile(base_sampler_rpip.sample, mode="reduce-overhead")
 
 
     jump_params = {
