@@ -16,10 +16,10 @@ def download_file(url):
 
 # URLs to download
 urls = [
-    # "http://data.csail.mit.edu/places/places365/places365standard_easyformat.tar",
-    # "http://images.cocodataset.org/zips/train2017.zip",  # Example URL for MS-COCO train dataset
-    "http://images.cocodataset.org/zips/val2017.zip",    # Example URL for MS-COCO validation dataset
-    # "https://github.com/ndb796/Small-ImageNet-Validation-Dataset-1000-Classes/archive/refs/heads/main.zip"  # Example URL for Small ImageNet dataset
+    "http://data.csail.mit.edu/places/places365/places365standard_easyformat.tar",
+    # "http://images.cocodataset.org/zips/train2017.zip",
+    "http://images.cocodataset.org/zips/val2017.zip",
+    "https://github.com/ndb796/Small-ImageNet-Validation-Dataset-1000-Classes/archive/refs/heads/main.zip"
 ]
 
 for url in urls:

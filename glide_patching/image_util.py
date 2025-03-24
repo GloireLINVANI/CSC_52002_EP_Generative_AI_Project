@@ -15,6 +15,10 @@ def read_image(path: str, size: int = 256) -> torch.Tensor:
 
 
 def read_mask(path: str, size: int = 256, resample=Image.BICUBIC) -> Tuple[torch.Tensor, torch.Tensor]:
+    """
+    Reads an image from the given path, resizes it, and returns a tensor representing the mask.
+    """
+
     pil_img = Image.open(path).convert('RGB')
     pil_img = pil_img.resize((size, size), resample=resample)
     img = np.array(pil_img)
@@ -22,6 +26,7 @@ def read_mask(path: str, size: int = 256, resample=Image.BICUBIC) -> Tuple[torch
 
 def show_images(batch: torch.Tensor):
     """ Display a batch of images inline. """
+
     scaled = ((batch + 1) * 127.5).round().clamp(0, 255).to(torch.uint8).cpu()
     reshaped = scaled.permute(2, 0, 3, 1).reshape([batch.shape[2], -1, 3])
     display(Image.fromarray(reshaped.numpy()))
@@ -29,6 +34,7 @@ def show_images(batch: torch.Tensor):
 
 def process_image(input_image, size=256, device='cpu'):
     """Process the input image to the format expected by the model."""
+
     # Resize to 256x256
     img = Image.fromarray(input_image).resize((size, size), Image.LANCZOS)
     # Convert to tensor in the range [-1, 1]
@@ -40,6 +46,7 @@ def process_image(input_image, size=256, device='cpu'):
 
 def process_mask(mask_image, size=256, device='cpu'):
     """Process the mask to the format expected by the model."""
+
     # Resize to 256x256
     mask = Image.fromarray(mask_image).convert('L').resize((size, size), Image.NEAREST)
     # Convert to tensor (0 for inpaint areas, 1 for keep areas)
@@ -49,21 +56,42 @@ def process_mask(mask_image, size=256, device='cpu'):
     return mask_tensor.to(device)
 
 def gen_mask_64x64_sr():
+    """
+    Generate a 64x64 mask with a checkerboard pattern.
+    """
+
     mask = np.zeros((64, 64, 3), dtype=np.uint8)
     mask[::2, ::2, :] = 255
     # mask[32:64, 32:64, :] = 255
     return mask
 
 def gen_mask_64x64_vert_stripes():
+    """
+    Generate a 64x64 mask with a vertical stripes pattern.
+    """
+        
     mask = np.zeros((64, 64, 3), dtype=np.uint8)
     mask[:, ::2, :] = 255
     return mask
 
 def save_img_np(img, path):
+    """
+    Save a NumPy array as an image file.
+    Args:
+        img (numpy.ndarray): The image data as a NumPy array.
+        path (str): The file path where the image will be saved.
+    Returns:
+        None
+    """
+
     img = Image.fromarray(img)
     img.save(path)
 
 def save_img_th(img, path):
+    """
+    Save a PyTorch tensor as an image file.
+    """
+
     img = img.cpu().numpy()
     img = np.transpose(img, (1, 2, 0))
     img = img.astype(np.uint8)
@@ -71,6 +99,10 @@ def save_img_th(img, path):
     img.save(path)
 
 def save_image(image, path):
+    """
+    Saves a given image tensor to the specified file path.
+    """
+
     image = image.permute(1, 2, 0).cpu().numpy()
     image = (image + 1) / 2 * 255
     image = image.clip(0, 255).astype(np.uint8)
@@ -78,6 +110,16 @@ def save_image(image, path):
     image.save(path)
 
 def save_batch(batch, path, names):
+    """
+    Saves a batch of images to the specified path with sanitized names.
+    Args:
+        batch (list): A list of images to be saved.
+        path (str): The path format string where images will be saved. It should contain placeholders for index and name.
+        names (list): A list of names corresponding to each image in the batch. Names will be sanitized to contain only alphanumeric characters.
+    Returns:
+        None
+    """
+
     import re
     sub = re.compile(r'[^a-zA-Z0-9]')
     for i, image in enumerate(batch):

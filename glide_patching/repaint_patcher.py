@@ -247,6 +247,7 @@ def repaint_p_sample(
 def rp_undo(
     diffusion_model, image_before_step, img_after_model, est_x_0, t, debug=False
 ):
+    """The undo step from RePaint's sampling model."""
     beta = extract_into_tensor(diffusion_model.betas, t, img_after_model.shape)
     img_in_est = torch.sqrt(1 - beta) * img_after_model + torch.sqrt(
         beta
@@ -287,6 +288,7 @@ def repaint_p_sample_loop(
 
 def patch_model_for_repaint(diffusion):
     """Set up RePaint sampling for a given diffusion model."""
+    
     diffusion.p_sample = lambda *args, **kwargs: repaint_p_sample(
         diffusion, *args, **kwargs
     )

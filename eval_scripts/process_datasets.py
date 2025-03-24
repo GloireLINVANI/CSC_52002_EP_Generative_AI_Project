@@ -9,10 +9,10 @@ import numpy as np
 import json
 import os
 
-import repaint_sampling as RS
-import repaint_patcher as RP
-import prepare_glide_inpaint as PGI
-from image_util import *
+import glide_patching.repaint_sampling as RS
+import glide_patching.repaint_patcher as RP
+import glide_patching.prepare_glide_inpaint as PGI
+from glide_patching.image_util import *
 
 size = 64
 large_size = 256
@@ -25,6 +25,7 @@ common_transform = transforms.Compose([
     transforms.ToTensor(),
     transforms.Lambda(lambda x: x * 2 - 1),
 ])
+
 with open('data/datasets/imagenet.json') as f:
     imagenet_labels = json.load(f)
 
@@ -77,9 +78,9 @@ p365t_classes = datasets['places_365_train'].classes
 p365v_classes = datasets['places_365_val'].classes
 
 masks = {
-    # 'ex64': read_mask('data/masks/64/ex64.png', size=64),
-    # 'genhalf': read_mask('data/masks/64/genhalf.png',size=64),
-    # 'sr64': read_mask('data/masks/64/sr64.png',size=64),
+    'ex64': read_mask('data/masks/64/ex64.png', size=64),
+    'genhalf': read_mask('data/masks/64/genhalf.png',size=64),
+    'sr64': read_mask('data/masks/64/sr64.png',size=64),
     'thick': read_mask('data/masks/64/thick.png',size=64),
     'thin': read_mask('data/masks/64/thin.png',size=64),
     'vs64': read_mask('data/masks/64/vs64.png',size=64),

@@ -1,7 +1,26 @@
 import torch as th
 
 class BaseGlideSampler:
+    """
+    Base class for Glide Sampler.
+    Attributes:
+        model: The model used for sampling.
+        diffusion: The diffusion process used for sampling.
+        options: Dictionary containing various options for the sampler.
+        device: The device to run the model on (default is 'cpu').
+        model_fn: The function to use for the model. If None, defaults to the model itself.
+    """
+
     def __init__(self, model, diffusion, options, model_fn, device='cpu'):
+        """
+        Initializes the BaseGlideSampler with the given model, diffusion process, options, and device.
+        Args:
+            model: The model to be used for sampling.
+            diffusion: The diffusion process to be used for sampling.
+            options: Dictionary containing various options for the sampler.
+            model_fn: The function to use for the model. If None, defaults to the model itself.
+            device: The device to run the model on (default is 'cpu').
+        """
         self.model = model
         self.diffusion = diffusion
         self.options = options
@@ -11,6 +30,15 @@ class BaseGlideSampler:
             self.model_fn = model
 
     def generate_model_kwargs(self, prompt, batch_size, batch_prompts=False):
+        """
+        Generates model keyword arguments based on the given prompt and batch size.
+        Args:
+            prompt: The text prompt to generate tokens from.
+            batch_size: The number of samples to generate.
+            batch_prompts: Whether to treat the prompt as a batch of prompts (default is False).
+        Returns:
+            A dictionary containing the tokens and mask tensors.
+        """
         all_tokens = []
         all_mask = []
 
@@ -47,6 +75,17 @@ class BaseGlideSampler:
         return model_kwargs
     
     def sample(self, prompt, batch_size, model_kwargs=None, batch_prompts=False, **p_sample_kwargs):
+        """
+        Samples images based on the given prompt and batch size.
+        Args:
+            prompt: The text prompt to generate samples from.
+            batch_size: The number of samples to generate.
+            model_kwargs: Additional keyword arguments for the model (default is None).
+            batch_prompts: Whether to treat the prompt as a batch of prompts (default is False).
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            A tensor containing the generated samples.
+        """
         if model_kwargs is None:
             model_kwargs={}
         m_kwargs = self.generate_model_kwargs(prompt, batch_size, batch_prompts=batch_prompts)
@@ -68,6 +107,35 @@ class BaseGlideSampler:
         return samples
 
 class CFGSampler(BaseGlideSampler):
+    """
+    CFGSampler is a subclass of BaseGlideSampler that implements classifier-free guidance sampling.
+    Args:
+        model (nn.Module): The model to be used for sampling.
+        diffusion (Diffusion): The diffusion process to be used.
+        options (dict): Additional options for the sampler.
+        guidance_scale (float): The scale for classifier-free guidance.
+        device (str, optional): The device to run the model on. Defaults to 'cpu'.
+    Methods:
+        generate_model_kwargs(prompt, batch_size, batch_prompts=False):
+            Generates the model keyword arguments required for sampling.
+            Args:
+                prompt (str or list of str): The input prompt(s) for the model.
+                batch_size (int): The number of samples to generate.
+                batch_prompts (bool, optional): Whether to treat the prompt as a batch of prompts. Defaults to False.
+            Returns:
+                dict: A dictionary containing the tokens and mask for the model.
+        sample(prompt, batch_size, model_kwargs=None, batch_prompts=False, **p_sample_kwargs):
+            Samples from the model using the provided prompt and batch size.
+            Args:
+                prompt (str or list of str): The input prompt(s) for the model.
+                batch_size (int): The number of samples to generate.
+                model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+                batch_prompts (bool, optional): Whether to treat the prompt as a batch of prompts. Defaults to False.
+                **p_sample_kwargs: Additional keyword arguments for the sampling process.
+            Returns:
+                Tensor: The generated samples.
+    """
+
     def __init__(self, model, diffusion, options, guidance_scale, device='cpu'):
         def model_fn(x_t, ts, **kwargs):
             half = x_t[: len(x_t) // 2]
@@ -81,6 +149,15 @@ class CFGSampler(BaseGlideSampler):
         super().__init__(model, diffusion, options, model_fn, device)
 
     def generate_model_kwargs(self, prompt, batch_size, batch_prompts=False):
+        """            
+        Generates the model keyword arguments required for sampling.
+        Args:
+            prompt (str or list of str): The input prompt(s) for the model.
+            batch_size (int): The number of samples to generate.
+            batch_prompts (bool, optional): Whether to treat the prompt as a batch of prompts. Defaults to False.
+        Returns:
+            dict: A dictionary containing the tokens and mask for the model.
+        """
         all_tokens = []
         all_mask = []
 
@@ -121,6 +198,17 @@ class CFGSampler(BaseGlideSampler):
         return model_kwargs
     
     def sample(self, prompt, batch_size, model_kwargs=None, batch_prompts=False, **p_sample_kwargs):
+        """
+        Samples from the model using the provided prompt and batch size.
+        Args:
+            prompt (str or list of str): The input prompt(s) for the model.
+            batch_size (int): The number of samples to generate.
+            model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+            batch_prompts (bool, optional): Whether to treat the prompt as a batch of prompts. Defaults to False.
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            Tensor: The generated samples.
+        """
         if model_kwargs is None:
             model_kwargs={}
         print("CFGSampler")
@@ -130,7 +218,35 @@ class CFGSampler(BaseGlideSampler):
         return super().sample(prompt, full_batch_size, model_kwargs, batch_prompts=batch_prompts, **p_sample_kwargs)
     
 class UpscaleSampler(BaseGlideSampler):
+    """
+    UpscaleSampler is a class that inherits from BaseGlideSampler and is used to perform upsampling on given samples.
+    Methods:
+        sample(samples, upsample_temp, prompt, batch_size, model_kwargs, **p_sample_kwargs)
+            Performs upsampling on the provided samples using the specified parameters.
+            Args:
+                samples (tensor): The input samples to be upsampled.
+                upsample_temp (float): The temperature parameter for the upsampling noise.
+                prompt (str): The prompt to guide the upsampling process.
+                batch_size (int): The number of samples in a batch.
+                model_kwargs (dict, optional): Additional keyword arguments for the model.
+                **p_sample_kwargs: Additional keyword arguments for the sampling process.
+            Returns:
+                tensor: The upsampled samples.
+    """
+    
     def sample(self, samples, upsample_temp, prompt, batch_size, model_kwargs, **p_sample_kwargs):
+        '''
+        Performs upsampling on the provided samples using the specified parameters.
+        Args:
+            samples (tensor): The input samples to be upsampled.
+            upsample_temp (float): The temperature parameter for the upsampling noise.
+            prompt (str): The prompt to guide the upsampling process.
+            batch_size (int): The number of samples in a batch.
+            model_kwargs (dict, optional): Additional keyword arguments for the model.
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            tensor: The upsampled samples.
+        '''
         addl_kwargs = dict(
             low_res=((samples+1)*127.5).round()/127.5 - 1,
         )
@@ -142,7 +258,41 @@ class UpscaleSampler(BaseGlideSampler):
         return super().sample(prompt, batch_size, model_kwargs, **p_sample_kwargs)
     
 class CFGSamplerInpaint(CFGSampler):
+    """
+    CFGSamplerInpaint is a subclass of CFGSampler that provides functionality for inpainting images.
+    Args:
+        model (nn.Module): The model to be used for sampling.
+        diffusion (Diffusion): The diffusion process to be used.
+        options (dict): Additional options for the sampler.
+        guidance_scale (float): The scale for classifier-free guidance.
+        device (str, optional): The device to run the model on. Defaults to 'cpu'.
+    Methods:
+        sample(source_image_64, source_mask_64, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+            Samples images based on the provided source image, mask, and prompt.
+            Args:
+                source_image_64 (torch.Tensor): The source image tensor with shape (batch_size, channels, height, width).
+                source_mask_64 (torch.Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+                prompt (str): The text prompt to guide the image generation.
+                batch_size (int): The number of images to generate in a batch.
+                model_kwargs (dict, optional): Additional keyword arguments to pass to the model. Defaults to None.
+                **p_sample_kwargs: Additional keyword arguments to pass to the sampling function.
+            Returns:
+                torch.Tensor: The generated images tensor.
+    """
+
     def sample(self, source_image_64, source_mask_64, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+        """
+        Samples images based on the provided source image, mask, and prompt.
+        Args:
+            source_image_64 (torch.Tensor): The source image tensor with shape (batch_size, channels, height, width).
+            source_mask_64 (torch.Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+            prompt (str): The text prompt to guide the image generation.
+            batch_size (int): The number of images to generate in a batch.
+            model_kwargs (dict, optional): Additional keyword arguments to pass to the model. Defaults to None.
+            **p_sample_kwargs: Additional keyword arguments to pass to the sampling function.
+        Returns:
+            torch.Tensor: The generated images tensor.
+        """
         if model_kwargs is None:
             model_kwargs = {}
         
@@ -177,7 +327,39 @@ class CFGSamplerInpaint(CFGSampler):
         return super().sample(prompt, batch_size, model_kwargs, **p_sample_kwargs)
     
 class UpscaleSamplerInpaint(UpscaleSampler):
+    """
+    UpscaleSamplerInpaint is a subclass of UpscaleSampler that provides functionality for inpainting during the upscaling process.
+    Methods:
+        sample(samples, upsample_temp, source_image_256, source_mask_256, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+            Samples the upscaled image with inpainting applied.
+            Args:
+                samples (torch.Tensor): The input samples to be upscaled.
+                upsample_temp (float): The temperature parameter for the upsampling process.
+                source_image_256 (torch.Tensor): The source image tensor with shape (batch_size, channels, height, width).
+                source_mask_256 (torch.Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+                prompt (str): The text prompt guiding the generation process.
+                batch_size (int): The batch size for the sampling process.
+                model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+                **p_sample_kwargs: Additional keyword arguments for the sampling process.
+            Returns:
+                torch.Tensor: The upscaled and inpainted image tensor.
+    """
+
     def sample(self, samples, upsample_temp, source_image_256, source_mask_256, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+        """
+        Samples the upscaled image with inpainting applied.
+        Args:
+            samples (torch.Tensor): The input samples to be upscaled.
+            upsample_temp (float): The temperature parameter for the upsampling process.
+            source_image_256 (torch.Tensor): The source image tensor with shape (batch_size, channels, height, width).
+            source_mask_256 (torch.Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+            prompt (str): The text prompt guiding the generation process.
+            batch_size (int): The batch size for the sampling process.
+            model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            torch.Tensor: The upscaled and inpainted image tensor.
+        """
         if model_kwargs is None:
             model_kwargs = {}
 
@@ -209,7 +391,40 @@ class UpscaleSamplerInpaint(UpscaleSampler):
         return super().sample(samples, upsample_temp, prompt, batch_size, model_kwargs, **p_sample_kwargs)
     
 class CFGSamplerRepaint(CFGSampler):
+    """
+    CFGSamplerRepaint is a subclass of CFGSampler that provides functionality for inpainting images, using RePaint sampling strategy.
+    Args:
+        model (nn.Module): The model to be used for sampling.
+        diffusion (Diffusion): The diffusion process to be used.
+        options (dict): Additional options for the sampler.
+        guidance_scale (float): The scale for classifier-free guidance.
+        device (str, optional): The device to run the model on. Defaults to 'cpu'.
+    Methods:
+        sample(source_image_64, source_mask_64, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+            Samples images based on the provided source image, mask, and prompt. Requires a jump_params kwarg.
+            Args:
+                source_image_64 (torch.Tensor): The source image tensor with shape (batch_size, channels, height, width).
+                source_mask_64 (torch.Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+                prompt (str): The text prompt to guide the image generation.
+                batch_size (int): The number of images to generate in a batch.
+                model_kwargs (dict, optional): Additional keyword arguments to pass to the model. Defaults to None.
+                **p_sample_kwargs: Additional keyword arguments to pass to the sampling function.
+            Returns:
+                torch.Tensor: The generated images tensor.
+    """
     def sample(self, source_image_64, source_mask_64, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+        """
+        Samples images based on the provided source image, mask, and prompt. Requires a jump_params kwarg.
+        Args:
+            source_image_64 (torch.Tensor): The source image tensor with shape (batch_size, channels, height, width).
+            source_mask_64 (torch.Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+            prompt (str): The text prompt to guide the image generation.
+            batch_size (int): The number of images to generate in a batch.
+            model_kwargs (dict, optional): Additional keyword arguments to pass to the model. Defaults to None.
+            **p_sample_kwargs: Additional keyword arguments to pass to the sampling function.
+        Returns:
+            torch.Tensor: The generated images tensor.
+        """
         if model_kwargs is None:
             model_kwargs = {}
         
@@ -232,7 +447,28 @@ class CFGSamplerRepaint(CFGSampler):
         return super().sample(prompt, batch_size, model_kwargs, **p_sample_kwargs)
     
 class UpscaleSamplerRepaint(UpscaleSampler):
+    """
+    UpscaleSamplerRepaint is a subclass of UpscaleSampler that provides functionality
+    to sample images with additional parameters for source images and masks.
+    Methods:
+        sample(samples, upsample_temp, source_image_256, source_mask_256, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+            Samples images with the given parameters, including source images and masks. Requires a jump_params kwarg.
+    """
     def sample(self, samples, upsample_temp, source_image_256, source_mask_256, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+        """
+        Samples images with the given parameters, including source images and masks. Requires a jump_params kwarg.
+        Args:
+            samples (Tensor): The input samples to be upscaled.
+            upsample_temp (float): The temperature parameter for upsampling.
+            source_image_256 (Tensor): The source image tensor with shape (batch_size, channels, height, width).
+            source_mask_256 (Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+            prompt (str): The prompt for the model.
+            batch_size (int): The batch size for sampling.
+            model_kwargs (dict, optional): Additional keyword arguments for the model (default is None).
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            Tensor: The upsampled images.
+        """
         if model_kwargs is None:
             model_kwargs = {}
 
@@ -254,7 +490,36 @@ class UpscaleSamplerRepaint(UpscaleSampler):
         return super().sample(samples, upsample_temp, prompt, batch_size, model_kwargs, **p_sample_kwargs)
     
 class CFGSamplerRepaintInpaint(CFGSampler):
+    """
+    CFGSamplerRepaintInpaint is a class that extends CFGSampler to perform sampling with inpainting capabilities.
+    It handles the generation of samples by incorporating source images and masks, and ensures that the model
+    predictions adhere to the known parts of the image.
+    Methods:
+        sample(source_image_64, source_mask_64, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+            Generates samples based on the provided source images, masks, and prompt. Requires a jump_params kwarg.
+            Args:
+                source_image_64 (Tensor): The source image tensor with shape (batch_size, channels, height, width).
+                source_mask_64 (Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+                prompt (str): The text prompt to guide the sampling process.
+                batch_size (int): The number of samples to generate in a batch.
+                model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+                **p_sample_kwargs: Additional keyword arguments for the sampling process.
+            Returns:
+                Tensor: The generated samples.
+    """
     def sample(self, source_image_64, source_mask_64, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+        """
+        Generates samples based on the provided source images, masks, and prompt. Requires a jump_params kwarg.
+        Args:
+            source_image_64 (Tensor): The source image tensor with shape (batch_size, channels, height, width).
+            source_mask_64 (Tensor): The source mask tensor with shape (batch_size, channels, height, width).
+            prompt (str): The text prompt to guide the sampling process.
+            batch_size (int): The number of samples to generate in a batch.
+            model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            Tensor: The generated samples.
+        """
         if model_kwargs is None:
             model_kwargs = {}
 
@@ -289,7 +554,24 @@ class CFGSamplerRepaintInpaint(CFGSampler):
         return super().sample(prompt, batch_size, model_kwargs, **p_sample_kwargs)
     
 class UpscaleSamplerRepaintInpaint(UpscaleSampler):
+    """
+    A class that extends the UpscaleSampler to perform inpainting during the upscaling process.
+    """
     def sample(self, samples, upsample_temp, source_image_256, source_mask_256, prompt, batch_size, model_kwargs=None, **p_sample_kwargs):
+        """
+        Samples images with inpainting during the upscaling process. Requires a jump_params kwarg.
+        Args:
+            samples (Tensor): The input samples to be upscaled.
+            upsample_temp (float): The temperature parameter for upsampling.
+            source_image_256 (Tensor): The source image tensor of shape (batch_size, channels, height, width).
+            source_mask_256 (Tensor): The source mask tensor of shape (batch_size, channels, height, width).
+            prompt (str): The text prompt for the model.
+            batch_size (int): The batch size for processing.
+            model_kwargs (dict, optional): Additional keyword arguments for the model. Defaults to None.
+            **p_sample_kwargs: Additional keyword arguments for the sampling process.
+        Returns:
+            Tensor: The upscaled and inpainted samples.
+        """
         if model_kwargs is None:
             model_kwargs = {}
         

@@ -1,6 +1,10 @@
 import os
-from image_util import read_image
 from torch.utils.data import Dataset, DataLoader
+import glide_patching.repaint_sampling as RS
+import glide_patching.repaint_patcher as RP
+import glide_patching.prepare_glide_inpaint as PGI
+from glide_patching.image_util import *
+import torch as th
 
 import torchvision.transforms as transforms
 
@@ -83,98 +87,75 @@ def collect_images(base_path='samples_to_upscale'):
                 datasets[dset][model] = CustomImageDatasetFolders(image_paths, targets, transform=transform)
 
     return datasets
-datasets = collect_images()
-from image_util import show_images
-datasets['places_365_train']['repaint'][2]
-import repaint_sampling as RS
-import repaint_patcher as RP
-import prepare_glide_inpaint as PGI
-from image_util import *
-import torch as th
-has_cuda = th.cuda.is_available()
-device = th.device('cpu' if not has_cuda else 'cuda:2')
-# model, diffusion, options = PGI.create_glide_generative(device=device, cuda=has_cuda, timesteps='250')
-# model_up, diffusion_up, options_up = PGI.create_glide_upsampler(device=device, cuda=has_cuda, timesteps='250')
-# model_nip, diffusion_nip, options_nip = PGI.create_glide_generative(device=device, cuda=has_cuda, timesteps='250', use_inpaint=False)
-model_up_nip, diffusion_up_nip, options_up_nip = PGI.create_glide_upsampler(device=device, cuda=has_cuda, timesteps='250', use_inpaint=False)
 
-guidance_scale = 7
-# base_sampler = RS.CFGSamplerInpaint(model, diffusion, options, guidance_scale, device=device)
-# upscale_sampler = RS.UpscaleSamplerInpaint(model_up, diffusion_up, options_up, model_fn=None, device=device)
+if __name__ == "__main__":
+    datasets = collect_images()
+    datasets['places_365_train']['repaint'][2]
 
-from copy import deepcopy
+    has_cuda = th.cuda.is_available()
+    device = th.device('cpu' if not has_cuda else 'cuda:2')
 
-# diffusion_rp = deepcopy(diffusion)
-# diffusion_rp_up = deepcopy(diffusion_up)
+    model_up_nip, diffusion_up_nip, options_up_nip = PGI.create_glide_upsampler(device=device, cuda=has_cuda, timesteps='250', use_inpaint=False)
 
-# RP.patch_model_for_repaint(diffusion_rp)
-# RP.patch_model_for_repaint(diffusion_rp_up)
+    guidance_scale = 7
 
-# diffusion_rp_nip = deepcopy(diffusion_nip)
-# diffusion_rp_up_nip = deepcopy(diffusion_up_nip)
+    from copy import deepcopy
 
-# RP.patch_model_for_repaint(diffusion_rp_nip)
-# RP.patch_model_for_repaint(diffusion_rp_up_nip)
+    jump_params = {
+        "t_T": 250,
+        "n_sample": 1,
+        "jump_length": 10,
+        "jump_n_sample": 6,
+        "start_resampling": 30
+    }
 
-jump_params = {
-    "t_T": 250,
-    "n_sample": 1,
-    "jump_length": 10,
-    "jump_n_sample": 6,
-    "start_resampling": 30
-}
+    jump_params_rp_nip = {
+        "t_T": 250,
+        "n_sample": 1,
+        "jump_length": 10,
+        "jump_n_sample": 5,
+        "start_resampling": 150,
+        "end_resampling": 50
+    }
 
-jump_params_rp_nip = {
-    "t_T": 250,
-    "n_sample": 1,
-    "jump_length": 10,
-    "jump_n_sample": 5,
-    "start_resampling": 150,
-    "end_resampling": 50
-}
-# base_sampler_rp = RS.CFGSamplerRepaint(model_nip, diffusion_rp_nip, options_nip, guidance_scale, device=device)
-# upscale_sampler_rp = RS.UpscaleSamplerRepaint(model_up_nip, diffusion_rp_up_nip, options_up_nip, model_fn=None, device=device)
+    upscaler_base = RS.UpscaleSampler(model_up_nip, diffusion_up_nip, options_up_nip, None, device=device)
 
-# base_sampler_rpip = RS.CFGSamplerRepaintInpaint(model, diffusion_rp, options, guidance_scale, device=device)
-# upscale_sampler_rpip = RS.UpscaleSamplerRepaintInpaint(model_up, diffusion_rp_up, options_up, model_fn=None, device=device)
-upscaler_base = RS.UpscaleSampler(model_up_nip, diffusion_up_nip, options_up_nip, None, device=device)
+    upscaler_base.sample = th.compile(upscaler_base.sample, mode="max-autotune")
+    batch_size = 32
 
-upscaler_base.sample = torch.compile(upscaler_base.sample, mode="max-autotune")
-batch_size = 32
-
-res = {}
-for name, dataset_d in datasets.items():
-    for batch_i in range(0,635,batch_size):
-        orig_image_64 = []
-        base_image_64 = []
-        rp_image_64 = []
-        rpip_image_64 = []
-        orig_image_256 = []
-        prompts = []
-        for i in range(batch_i, batch_i+batch_size):
-            if i > len(dataset_d['original']):
+    res = {}
+    for name, dataset_d in datasets.items():
+        for batch_i in range(0,635,batch_size):
+            orig_image_64 = []
+            base_image_64 = []
+            rp_image_64 = []
+            rpip_image_64 = []
+            orig_image_256 = []
+            prompts = []
+            for i in range(batch_i, batch_i+batch_size):
+                if i > len(dataset_d['original']):
+                    break
+                prompts.append(dataset_d['original'][i][1])
+                orig_image_64.append(dataset_d['original'][i][0])
+                base_image_64.append(dataset_d['base'][i][0])
+                rp_image_64.append(dataset_d['repaint'][i][0])
+                rpip_image_64.append(dataset_d['rpip'][i][0])
+                orig_image_256.append(dataset_d['originals'][i][0])
+            if(len(prompts) < batch_size):
                 break
-            prompts.append(dataset_d['original'][i][1])
-            orig_image_64.append(dataset_d['original'][i][0])
-            base_image_64.append(dataset_d['base'][i][0])
-            rp_image_64.append(dataset_d['repaint'][i][0])
-            rpip_image_64.append(dataset_d['rpip'][i][0])
-            orig_image_256.append(dataset_d['originals'][i][0])
-        if(len(prompts) < batch_size):
-            break
-        orig_image_64 = torch.cat(orig_image_64).to(device)
-        base_image_64 = torch.cat(base_image_64).to(device)
-        rp_image_64 = torch.cat(rp_image_64).to(device)
-        rpip_image_64 = torch.cat(rpip_image_64).to(device)
-        orig_image_256 = torch.cat(orig_image_256).to(device)
-        up_base = upscaler_base.sample(base_image_64, 0.997, prompts, batch_size, {}, batch_prompts=True)
-        up_base_rp = upscaler_base.sample(rp_image_64, 0.997, prompts, batch_size, {}, batch_prompts=True)
-        up_base_rpip = upscaler_base.sample(rpip_image_64, 0.997, prompts, batch_size, {}, batch_prompts=True)
-        os.makedirs(f'data/large_samples/{name}/base', exist_ok=True)
-        os.makedirs(f'data/large_samples/{name}/repaint', exist_ok=True)
-        os.makedirs(f'data/large_samples/{name}/rpip', exist_ok=True)
-        os.makedirs(f'data/large_samples/{name}/original', exist_ok=True)
-        save_batch(up_base, f'data/large_samples/{name}/base/' + '{0}_{1}.png', prompts)
-        save_batch(up_base_rp, f'data/large_samples/{name}/repaint/' + '{0}_{1}.png', prompts)
-        save_batch(up_base_rpip, f'data/large_samples/{name}/rpip/' + '{0}_{1}.png', prompts)
-        save_batch(orig_image_256, f'data/large_samples/{name}/original/' + '{0}_{1}.png', prompts)
+            orig_image_64 = torch.cat(orig_image_64).to(device)
+            base_image_64 = torch.cat(base_image_64).to(device)
+            rp_image_64 = torch.cat(rp_image_64).to(device)
+            rpip_image_64 = torch.cat(rpip_image_64).to(device)
+            orig_image_256 = torch.cat(orig_image_256).to(device)
+            up_base = upscaler_base.sample(base_image_64, 0.997, prompts, batch_size, {}, batch_prompts=True)
+            up_base_rp = upscaler_base.sample(rp_image_64, 0.997, prompts, batch_size, {}, batch_prompts=True)
+            up_base_rpip = upscaler_base.sample(rpip_image_64, 0.997, prompts, batch_size, {}, batch_prompts=True)
+            os.makedirs(f'data/large_samples/{name}/base', exist_ok=True)
+            os.makedirs(f'data/large_samples/{name}/repaint', exist_ok=True)
+            os.makedirs(f'data/large_samples/{name}/rpip', exist_ok=True)
+            os.makedirs(f'data/large_samples/{name}/original', exist_ok=True)
+            save_batch(up_base, f'data/large_samples/{name}/base/' + '{0}_{1}.png', prompts)
+            save_batch(up_base_rp, f'data/large_samples/{name}/repaint/' + '{0}_{1}.png', prompts)
+            save_batch(up_base_rpip, f'data/large_samples/{name}/rpip/' + '{0}_{1}.png', prompts)
+            save_batch(orig_image_256, f'data/large_samples/{name}/original/' + '{0}_{1}.png', prompts)
