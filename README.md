@@ -3,7 +3,9 @@ Semantic Control in Diffusion Inpainting: Merging RePaint Sampling with Text-Dri
 
 ## Running the Code
 
-The main method of this paper is contained in `glide_patching`, as described in the following Structure section. In order to test the code, we recommend running the `Inpainting_GLIDE_and_RePaint.ipynb` file in Colab, accessible by the link in the next section. It handles installing the necessary libraries, patching the models for RePaint, and creating a UI to test the models.
+In order to test the code, we recommend running the `Inpainting_GLIDE_and_RePaint.ipynb` file in Colab, accessible by the link in the next section. It handles installing the necessary libraries, patching the models for RePaint, and creating a UI to test the models. 
+
+As described in the following, the bulk of novel method code written for this project is contained in `glide_patching`, although we have written scripts and notebooks throughout the other directories that were used for evaluation. However, it is not necessary to run these scripts to test the method. 
 
 ## Structure of this Repository
 
