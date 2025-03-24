@@ -10,7 +10,7 @@ As described in the following, the bulk of novel method code written for this pr
 ## Structure of this Repository
 
 **Files**:
- * `Inpainting_GLIDE_and_RePaint.ipynb`: The demo notebook. It can be run through google colab, and will create a Gradio UI. Run using [this link](https://githubtocolab.com/pandanautinspace/CSC_52002_EP_Generative_AI_Project/blob/refactor/Inpainting_GLIDE_and_RePaint.ipynb), or import the file using the Colab UI. The resampling steps used are greatly reduced by default so that similar time-performance is achieved by all models, but it is easy to change with the jump_params variable. 
+ * `Inpainting_GLIDE_and_RePaint.ipynb`: The demo notebook. It can be run through google colab, and will create a Gradio UI. Run using [this link](https://githubtocolab.com/GloireLINVANI/CSC_52002_EP_Generative_AI_Project/blob/main/Inpainting_GLIDE_and_RePaint.ipynb), or import the file using the Colab UI. The resampling steps used are greatly reduced by default so that similar time-performance is achieved by all models, but it is easy to change with the jump_params variable. 
  * `Report Evaluation Data.xlsx`: The excel file containing the tables used for the report. They are based on CSV files also contained in this repository.
 
 **Directories**:
