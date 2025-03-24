@@ -1,0 +1,6 @@
+[submodule "RePaint"]
+	path = RePaint
+	url = https://github.com/andreas128/RePaint
+[submodule "glide-text2im"]
+	path = glide-text2im
+	url = https://github.com/openai/glide-text2im/

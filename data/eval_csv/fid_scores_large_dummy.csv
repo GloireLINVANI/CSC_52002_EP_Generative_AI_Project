@@ -1,0 +1,13 @@
+dataset,comparison,FID
+coco_val2017,base,85.04006514660995
+coco_val2017,repaint,91.88348077452872
+coco_val2017,rpip,84.21095790777582
+imagenet_val,base,82.92230559499154
+imagenet_val,repaint,87.06872660822398
+imagenet_val,rpip,82.19676923416745
+places_365_train,base,89.97391871717804
+places_365_train,repaint,92.27689844775904
+places_365_train,rpip,90.07315267104349
+places_365_val,base,88.88666419745272
+places_365_val,repaint,94.28972082377129
+places_365_val,rpip,90.0744686842811
