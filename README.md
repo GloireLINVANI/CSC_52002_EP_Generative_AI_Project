@@ -1,10 +1,14 @@
 # TEXT-CONDITIONED INPAINTING WITH REPAINT SAMPLING STRATEGY (CSC_52002_EP GenAI Project)
 Semantic Control in Diffusion Inpainting: Merging RePaint Sampling with Text-Driven Generation.
 
+## Running the Code
+
+The main method of this paper is contained in `glide_patching`, as described in the following Structure section. In order to test the code, we recommend running the `Inpainting_GLIDE_and_RePaint.ipynb` file in Colab, accessible by the link in the next section. It handles installing the necessary libraries, patching the models for RePaint, and creating a UI to test the models.
+
 ## Structure of this Repository
 
 **Files**:
- * `Inpainting_GLIDE_and_RePaint.ipynb`: The demo notebook. It can be run through google colab, and will create a Gradio UI. Run using [this link](https://githubtocolab.com/pandanautinspace/CSC_52002_EP_Generative_AI_Project/blob/refactor/Inpainting_GLIDE_and_RePaint.ipynb), or import the file using the Colab UI. The resampling steps used are greatly reduced so that similar time-performance is achieved by all models, but it is easy to change with the jump_params variable. 
+ * `Inpainting_GLIDE_and_RePaint.ipynb`: The demo notebook. It can be run through google colab, and will create a Gradio UI. Run using [this link](https://githubtocolab.com/pandanautinspace/CSC_52002_EP_Generative_AI_Project/blob/refactor/Inpainting_GLIDE_and_RePaint.ipynb), or import the file using the Colab UI. The resampling steps used are greatly reduced by default so that similar time-performance is achieved by all models, but it is easy to change with the jump_params variable. 
  * `Report Evaluation Data.xlsx`: The excel file containing the tables used for the report. They are based on CSV files also contained in this repository.
 
 **Directories**:
