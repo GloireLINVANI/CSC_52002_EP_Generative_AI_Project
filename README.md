@@ -21,5 +21,5 @@ As described in the following, the bulk of novel method code written for this pr
  * `test_notebooks/`: Python notebooks used during testing and construction of our process. May need slight changes in order to work with the structure of the data. Described in more detail in directory.
 
 **Submodules**:
- * `glide-text2im`: Version of GLIDE that our model is based on. If needed, one can `cd` into this directory and `pip install .` in order to get the version of GLIDE used in our paper.
+ * `glide-text2im`: Version of GLIDE that our model is based on. If needed, one can `cd` into this directory and `pip install .` in order to get the version of GLIDE used in our report.
  * `RePaint`: Version of RePaint that our model is based on. The methods in `repaint_patcher.py` are based on source from this repository.
